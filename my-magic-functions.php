@@ -817,4 +817,5 @@ echo '<ul class="menu-social" style="float:right;">
 <li id="item-244" class="firstItem"><a class="twitter" href="'.$twitter_url.'"><span>twitter</span></a></li><li id="item-245"><a class="facebook" href="'.$facebook_url.'"><span>facebook</span></a></li>
 </ul>';
 }//sidebars//sidebarsfunction twentytwelve_widgets_init() {	register_sidebar( array(		'name' => __( 'Main Sidebar', 'twentytwelve' ),		'id' => 'sidebar-1',		'description' => __( 'Appears on posts and pages except the optional Front Page template, which has its own widgets', 'twentytwelve' ),		'before_widget' => '<div class="rt-block">',		'after_widget' => '</div>',		'before_title' => '<div class="module-title">                	<h2 class="title">',		'after_title' => '</h2></div>',	) );}add_action( 'widgets_init', 'twentytwelve_widgets_init' );
+
 ?>
