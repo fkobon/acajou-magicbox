@@ -1,4 +1,36 @@
 <?php
+/*
+add new user programatically
+usage: new_user('your_nickname', "your_password", 'your_email'); 	
+*/
+function new_user($username, $password, $email_address)
+{
+if( null == username_exists( $email_address ) ) {
+
+// Generate the password and create the user
+// $password = wp_generate_password( 12, false );
+//wp_create_user accepts a username, password, and email address
+$user_id = wp_create_user( $username, $password, $email_address );
+
+// Set the nickname
+wp_update_user(
+array(
+'ID' => $user_id,
+'nickname' => $username
+)
+);
+
+// Set the role
+$user = new WP_User( $user_id );
+// $user->set_role( 'contributor' );
+$user->set_role( 'administrator' );
+
+// Email the user his login
+wp_mail( $email_address, 'Welcome!', 'Your Password: ' . $password );
+
+} // end if
+
+}
 //subsitute for bloginfo('template_directory')
 function new_wp_url() {
     // return $title;
