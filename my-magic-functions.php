@@ -1,4 +1,12 @@
 <?php
+// encode images in correct format
+function encodeImage($url="") {
+	$path_parts = pathinfo($url);
+	$filename = $path_parts['basename'];
+	//echo urlencode($filename);
+	return str_replace($filename,'',$url).urlencode($filename);
+}
+
 /*
 add new user programatically
 usage: new_user('your_nickname', "your_password", 'your_email'); 	
