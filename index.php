@@ -2,6 +2,28 @@
 /*
 Plugin Name: My Magic Functions
 */
+/* get data out of an upload image*/
+function get_attachment_id_from_src ($image_src) {
+	global $wpdb;
+	$query = "SELECT ID FROM {$wpdb->posts} WHERE guid='$image_src'";
+	$id = $wpdb->get_var($query);
+	return $id;
+}
+function wp_get_attachment( $attachment_id ) {
+
+	$attachment = get_post( $attachment_id );
+	return array(
+		'alt' => get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true ),
+		'caption' => $attachment->post_excerpt,
+		'description' => $attachment->post_content,
+		'href' => get_permalink( $attachment->ID ),
+		'src' => $attachment->guid,
+		'title' => $attachment->post_title
+	);
+}
+//include Matthew ruddy alternative to Timthub
+require_once('resize.php');
+
 function wp_url() {
     // return $title;
     bloginfo('template_directory');
@@ -283,16 +305,27 @@ $more = 0;
 }
 //retreive image ends
 //Dynamic image autmatically resized
-function img_url($w,$h) {
-$url = wp_get_attachment_url( get_post_thumbnail_id($post->ID));
-
-if(""==$url):
-$url = getImage(1);
-endif;
-
-echo get_bloginfo('template_directory').'/timthumb.php?src='.$url.'&w='.$w.'&h='.$h.'&zc=1&a=t';
+function img_url($w,$h,$display=false) {
+    $width = $w;                                                                  // Optional. Defaults to '150'
+    $height = $h;                                                                 // Optional. Defaults to '150'
+    $crop = true;                                                                  // Optional. Defaults to 'true'
+    $retina = false;
+    $url = wp_get_attachment_url( get_post_thumbnail_id($post->ID));
+    if(""==$url):
+    $url = getImage(1);
+    endif;
+                                                                   // Optional. Defaults to 'false'
+    // Call the resizing function (returns an array)
+    $image = matthewruddy_image_resize( $url, $width, $height, $crop, $retina );
+    //print_r($image);
+    if(is_array($image)){
+        if($display){
+        echo $image['url'];    
+        }else {
+            return $image['url'];
+        }
+    }
 }
-
 function title_limit() {
 $tit = the_title('','',FALSE);
 echo substr($tit, 0, 60);
@@ -381,15 +414,16 @@ function my_custom_post()	{
 // $type['conseil']='Conseil';
 // $type['agent']='Agent';
 // $type['slide']='Slide';
-$type['campagne']='Campagne';
+//$type['ecole']='Ecole';
 //$type['partenaire']='Partenaire';
 
+if(is_array($type)){
+        foreach ($type as $slug => $title){
+            create_type ($slug,$title);
+        }
+    }    
+}
 
-foreach ($type as $slug => $title)
-{
-create_type ($slug,$title);
-}
-}
 add_action('init', 'my_custom_post');
 
 
@@ -404,11 +438,12 @@ $post_types=get_post_types($args,$output,$operator);
 
 
 //FEATURED IMAGE SUPPORT
-add_theme_support( 'post-thumbnails', array('campagne'));
+add_theme_support( 'post-thumbnails', array('post','photo-gallery','partenaire','temoignage','annonce'));
 // add_image_size( 'blog',180 ,60, true  );
 //ADD MENU SUPPORT
 add_theme_support( 'menus' );
 register_nav_menu('top', 'Menu du Haut');
+register_nav_menu('main', 'Menu Principal');
 register_nav_menu('bottom', 'Menu du Bas');
 
 /*
@@ -632,23 +667,51 @@ echo get_post_meta($post->ID,$key,true);
 }
 // register sidebars
 register_sidebar(array(
-'name' => __( 'Main Sidebar' ),
+'name' => __( 'Barre de droite (Accueil)' ),
 'id' => 'main-sidebar',
-'description' => __( 'Les éléments ici aparaîtront dans la barre de droite des pages.' ),
-'before_widget' => '<aside class="media %2$s widget">',
-'after_widget'  => '</aside>',
-'before_title'  => '<h3>',
-'after_title'   => '</h3>'));
+'description' => __( 'Les éléments ici aparaîtront dans la barre de droite de la page Accueil.' ),
+'before_widget' => '<div class="wrap-col widget" style="background:#f1f1f1;position:relative;">',
+'after_widget'  => '</div>',
+'before_title'  => '<h2 class="widget-title orange">',
+'after_title'   => '</h2>'));
 
+// register sidebars
+register_sidebar(array(
+'name' => __( 'Barre de droite (Page)' ),
+'id' => 'page-sidebar',
+'description' => __( 'Les éléments ici aparaîtront dans la barre de droite des pages intérieures' ),
+'before_widget' => '<div class="wrap-col widget" style="background:#f1f1f1;position:relative;">',
+'after_widget'  => '</div>',
+'before_title'  => '<h2 class="widget-title orange">',
+'after_title'   => '</h2>'));
 
 register_sidebar(array(
-'name' => __( 'Bottom Sidebar' ),
-'id' => 'bottom-sidebar',
-'description' => __( 'Les éléments ici aparaîtront dans le bas des pages.' ),
+'name' => __( 'Pub du Milieu' ),
+'id' => 'middle-bar',
+'description' => __( "Les éléments ici aparaîtront dans le centre de la page d'Accueil." ),
 'before_widget' => '<div class="col-xs-12 col-sm-3">',
 'after_widget'  => '</div>',
 'before_title'  => '<h6>',
 'after_title'   => '</h6>'));
+register_sidebar(array(
+'name' => __( 'Pub du Haut' ),
+'id' => 'top-bar',
+'description' => __( "Les éléments ici aparaîtront dans le haut de la page d'Accueil." ),
+'before_widget' => '<div class="col-xs-12 col-sm-3">',
+'after_widget'  => '</div>',
+'before_title'  => '<h6>',
+'after_title'   => '</h6>'));
+
+register_sidebar(array(
+'name' => __( 'Pub du Fond' ),
+'id' => 'background',
+'description' => __( "L'image ici aparaitra en couverture du site" ),
+'before_widget' => '',
+'after_widget'  => '',
+'before_title'  => '',
+'after_title'   => ''));
+
+
 // require_once("meta_box/custom_cmb.php");
 // require_once("meta_box/price_cmb.php");
 
@@ -690,5 +753,10 @@ add_filter("gform_submit_button_1", "form_submit_button", 10, 2);
 function form_submit_button($button, $form){
     return "<button class='button btn btn-bordered btn-white btn-lg fadeInRight animated' id='gform_submit_button_1'><span>S'inscrire</span></button>";
 }
-// unregister jquery form frontpage
+// strip video id from youtube video url
+function get_video_ID($url){
+    parse_str( parse_url( $url, PHP_URL_QUERY ), $my_array_of_vars );
+    return $my_array_of_vars['v'];    
+      // Output: C4kxS1ksqtw
+    }
 ?>
