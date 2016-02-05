@@ -377,6 +377,47 @@ function new_excerpt($max_char, $more_link_text = '...',$notagp = false, $stript
 	   }
 	}
 
+// limit text length
+function  new_text_length($max_char,$content, $more_link_text = '...',$notagp = false, $stripteaser = 0, $more_file = '') {
+		$content = str_replace(']]>', ']]&gt;', $content);
+		$content = strip_tags($content);
+	
+	   if (isset($_GET['p']) && strlen($_GET['p']) > 0) {
+	   	  if($notagp) {
+		  echo $content;
+		  }
+		  else {
+		  // echo '<div class="slide_excerpt">';
+		  echo $content;
+		  // echo "</div>";
+		  }
+	   }
+	   else if ((strlen($content)>$max_char) && ($espacio = strpos($content, " ", $max_char ))) {
+			$content = substr($content, 0, $espacio);
+			$content = $content;
+			if($notagp) {
+		    echo $content;
+			echo $more_link_text;
+		    }
+		    else {
+			// echo '<div class="slide_excerpt">';
+			echo $content;
+			echo $more_link_text;
+			// echo "</div>";
+			}
+	   }
+	   else {
+	      if($notagp) {
+		  echo $content;
+		  }
+		  else {
+		  // echo '<div class="slide_excerpt">';
+		  echo $content;
+		  // echo "</div>";
+		  }
+	   }
+	}
+
 // breadcrumb
 function create_type ($slug,$title)
 {
