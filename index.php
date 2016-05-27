@@ -2,45 +2,7 @@
 /*
 Plugin Name: My Magic Functions
 */
-//Add Thumbnails in Manage Posts/Pages List // Copied from https://premium.wpmudev.org/blog/how-to-add-post-thumbnails-to-the-wordpress-post-and-page-management-screens/
-if ( !function_exists('AddThumbColumn') && function_exists('add_theme_support') ) {
-    // for post and page
-    add_theme_support('post-thumbnails', array( 'post', 'page' ) ); 
-    function AddThumbColumn($cols) {
-        $cols['thumbnail'] = __('Thumbnail'); return $cols; 
-    } 
-    function AddThumbValue($column_name, $post_id) { 
-        $width = (int) 60; $height = (int) 60; 
-        if ( 'thumbnail' == $column_name ) {
-            // thumbnail of WP 2.9 
-            $thumbnail_id = get_post_meta( $post_id, '_thumbnail_id', true ); 
-            // image from gallery 
-            $attachments = get_children( array('post_parent' => $post_id, 'post_type' => 'attachment', 'post_mime_type' => 'image') );
-            if ($thumbnail_id) $thumb = wp_get_attachment_image( $thumbnail_id, array($width, $height), true ); 
-            elseif ($attachments) { 
-                foreach ( $attachments as $attachment_id => $attachment ) { 
-                $thumb = wp_get_attachment_image( $attachment_id, array($width, $height), true ); 
-                } 
-            } if ( isset($thumb) && $thumb ) {
-                echo $thumb; } else { 
-                echo __('None'); 
-            } 
-        } 
-    } 
-    // for posts 
-    add_filter( 'manage_posts_columns', 'AddThumbColumn' ); 
-    add_action( 'manage_posts_custom_column', 'AddThumbValue', 10, 2 ); 
-    // for pages 
-    add_filter( 'manage_pages_columns', 'AddThumbColumn' ); 
-    add_action( 'manage_pages_custom_column', 'AddThumbValue', 10, 2 ); }
-    
-/* get custom thumbnail size URL*/
-function get_thumbnail_url_custom($post_ID,$size="full"){
-    $custom_thumb = wp_get_attachment_image_src(get_post_thumbnail_id($post_ID),$size);
-    return $custom_thumb[0];
-}
-
-/* get data out of an uploaded image*/
+/* get data out of an upload image*/
 function get_attachment_id_from_src ($image_src) {
 	global $wpdb;
 	$query = "SELECT ID FROM {$wpdb->posts} WHERE guid='$image_src'";
@@ -122,12 +84,9 @@ function custom_title() {
     // echo '<div class="span12"><span></span><a href="' . $homeLink . '">' . $home . '</a> ' . $delimiter . ' ';
   
     if ( is_category() ) {
-        /*
       $thisCat = get_category(get_query_var('cat'), false);
-      if ($thisCat->parent != 0) echo get_category_parents($thisCat->parent, TRUE, ' ' . $delimiter . ' ');*/
-      //echo $before . '' . single_cat_title('', false) . '' . $after;
-      //echo $before . '' . single_cat_title('', false) . '' . $after;
-      echo 'HEYY';
+      if ($thisCat->parent != 0) echo get_category_parents($thisCat->parent, TRUE, ' ' . $delimiter . ' ');
+      echo $before . '' . single_cat_title('', false) . '' . $after;
   
     } elseif ( is_search() ) {
       echo $before . 'Résultats pour "' . get_search_query() . '"' . $after;
@@ -418,46 +377,54 @@ function new_excerpt($max_char, $more_link_text = '...',$notagp = false, $stript
 	   }
 	}
 
-// limit text length
-function  new_text_length($max_char,$content, $more_link_text = '...',$notagp = false, $stripteaser = 0, $more_file = '') {
-		$content = str_replace(']]>', ']]&gt;', $content);
-		$content = strip_tags($content);
-	
-	   if (isset($_GET['p']) && strlen($_GET['p']) > 0) {
-	   	  if($notagp) {
-		  echo $content;
-		  }
-		  else {
-		  // echo '<div class="slide_excerpt">';
-		  echo $content;
-		  // echo "</div>";
-		  }
-	   }
-	   else if ((strlen($content)>$max_char) && ($espacio = strpos($content, " ", $max_char ))) {
-			$content = substr($content, 0, $espacio);
-			$content = $content;
-			if($notagp) {
-		    echo $content;
-			echo $more_link_text;
-		    }
-		    else {
-			// echo '<div class="slide_excerpt">';
-			echo $content;
-			echo $more_link_text;
-			// echo "</div>";
-			}
-	   }
-	   else {
-	      if($notagp) {
-		  echo $content;
-		  }
-		  else {
-		  // echo '<div class="slide_excerpt">';
-		  echo $content;
-		  // echo "</div>";
-		  }
-	   }
-	}
+// breadcrumb
+function create_type ($slug,$title)
+{
+register_post_type($slug, array(	'label' => $title,'description' => '','public' => true,'show_ui' => true,'show_in_menu' => true,'capability_type' => 'post','hierarchical' => false,'rewrite' => array('slug' => $slug),'query_var' => true,'exclude_from_search' => false,'supports' => array('title','editor','excerpt','trackbacks','custom-fields','comments','revisions','thumbnail','author','page-attributes',),'taxonomies' => array('category','post_tag'),'labels' => array (
+  'name' => $title.'s',
+  'singular_name' => $title,
+  'menu_name' => $title.'s',
+  'add_new' => 'Ajouter '.$title,
+  'add_new_item' => 'Ajouter '.$title,
+  'edit' => 'Modifier',
+  'edit_item' => 'Modifier '.$title,
+  'new_item' => 'Nouveau '.$title,
+  'view' => 'Afficher',
+  'view_item' => 'Afficher le '.$title,
+  'search_items' => 'Chercher '.$title,
+  'not_found' => 'Pas de '.$title.'s',
+  'not_found_in_trash' => 'Pas de '.$title.'s dans la Corbeille',
+  'parent' => $title.' parent',
+),) );
+
+}
+function my_custom_post()	{
+// Mariages, Baptême, Fêtes, Naissance', 'Anniversaire', 'Décès', 'Ventes',Séminaire et réunion
+//$type['projet']='Projet';
+//$type['jury']='Jury';
+//$type['block']='Bloc';
+//$type['info vol']='Info vol';
+//$type['partenaire']='Partenaire';
+//$type['temoignage']='Temoignage';
+// $type['calendrier']='Calendrier';
+// $type['archives']='Archive';
+// $type['galerie']='Galerie';
+//$type['partenaire']='Partenaire';
+// $type['categorie']='Catégorie';
+// $type['conseil']='Conseil';
+// $type['agent']='Agent';
+// $type['slide']='Slide';
+//$type['ecole']='Ecole';
+//$type['partenaire']='Partenaire';
+
+if(is_array($type)){
+        foreach ($type as $slug => $title){
+            create_type ($slug,$title);
+        }
+    }    
+}
+
+add_action('init', 'my_custom_post');
 
 
 // custom post types
@@ -693,22 +660,6 @@ function custom_breadcrumbs() {
   
   }
 } // end qt_custom_breadcrumbs()
-
-// custom page title
-function custom_page_title(){
-     if (is_category()) { return single_cat_title("",false); 
-         } elseif( is_tag() ) { 
-         return single_tag_title("",false); 
-     } elseif (is_day()) {
-         return get_the_time('F jS, Y'); 
-     } elseif (is_month()) { 
-         return get_the_time('F, Y'); 
-     } elseif (is_year()) { 
-         return get_the_time('Y'); 
-     } elseif (isset($_GET['paged']) && !empty($_GET['paged'])) {
-         return 'Archives';
-    }
-}
 function custom_key ($key)
 {
 global $post;
@@ -716,37 +667,45 @@ echo get_post_meta($post->ID,$key,true);
 }
 // register sidebars
 register_sidebar(array(
-'name' => __( 'Barre de droite' ),
+'name' => __( 'Barre de droite (Accueil)' ),
 'id' => 'main-sidebar',
 'description' => __( 'Les éléments ici aparaîtront dans la barre de droite de la page Accueil.' ),
-'before_widget' => '<div class="col-sm-12"><div id="%1$s"class="wrap-col widget %2$s"><div class="panel-body">',
-'after_widget'  => '</div></div></div>',
-'before_title'  => '<div class="panel-heading">',
-'after_title'   => '</div>'));
-/*
+'before_widget' => '<div class="wrap-col widget" style="background:#f1f1f1;position:relative;">',
+'after_widget'  => '</div>',
+'before_title'  => '<h2 class="widget-title orange">',
+'after_title'   => '</h2>'));
+
 // register sidebars
 register_sidebar(array(
-'name' => __( 'Barre de droite (Pages et articles)' ),
+'name' => __( 'Barre de droite (Page)' ),
 'id' => 'page-sidebar',
 'description' => __( 'Les éléments ici aparaîtront dans la barre de droite des pages intérieures' ),
 'before_widget' => '<div class="wrap-col widget" style="background:#f1f1f1;position:relative;">',
 'after_widget'  => '</div>',
 'before_title'  => '<h2 class="widget-title orange">',
 'after_title'   => '</h2>'));
-*/
+
+register_sidebar(array(
+'name' => __( 'Pub du Milieu' ),
+'id' => 'middle-bar',
+'description' => __( "Les éléments ici aparaîtront dans le centre de la page d'Accueil." ),
+'before_widget' => '<div class="col-xs-12 col-sm-3">',
+'after_widget'  => '</div>',
+'before_title'  => '<h6>',
+'after_title'   => '</h6>'));
 register_sidebar(array(
 'name' => __( 'Pub du Haut' ),
 'id' => 'top-bar',
-'description' => __( "La bannière de ce espace aparaîtra dans le haut de la page d'Accueil." ),
-'before_widget' => '',
-'after_widget'  => '',
-'before_title'  => '',
-'after_title'   => ''));
+'description' => __( "Les éléments ici aparaîtront dans le haut de la page d'Accueil." ),
+'before_widget' => '<div class="col-xs-12 col-sm-3">',
+'after_widget'  => '</div>',
+'before_title'  => '<h6>',
+'after_title'   => '</h6>'));
 
 register_sidebar(array(
-'name' => __( 'Pub du bas' ),
-'id' => 'bottom-bar',
-'description' => __( "La bannière de ce espace aparaîtra au bas du site." ),
+'name' => __( 'Pub du Fond' ),
+'id' => 'background',
+'description' => __( "L'image ici aparaitra en couverture du site" ),
 'before_widget' => '',
 'after_widget'  => '',
 'before_title'  => '',
@@ -800,34 +759,4 @@ function get_video_ID($url){
     return $my_array_of_vars['v'];    
       // Output: C4kxS1ksqtw
     }
-/* custom pagination script */
-function wp_page_numbers_custom($custom_query, $paged)
-{
-
-	$pagingString = "<div id='wp_page_numbers'>\n";
-        $pagingString .= '<ul>';
-        $number_of_pages = ceil(($custom_query->found_posts)/ (get_option('posts_per_page')));
-        for($i=1;$i<=$number_of_pages;$i++):
-                if($i== $paged):
-                    $pagingString .= "<li class=\"active_page\">";
-                    $pagingString .= "<a href=\"" . get_pagenum_link($i) . "\">" . $i . "</a>";
-                    $pagingString .= "</li>\n";
-                else:
-                    $pagingString .= "<li>";
-                    $pagingString .= "<a href=\"" . get_pagenum_link($i) . "\">" . $i . "</a>";
-                    $pagingString .= "</li>\n";
-                endif;
-        endfor;
-        $pagingString .= '</ul>';
-	$pagingString .= '</div>';
-	
-    echo $pagingString;
-
-}
-/* EXTRACT YOUTUBE ID FROM LINK */
-function get_video_ID($url){
-    parse_str( parse_url( $url, PHP_URL_QUERY ), $my_array_of_vars );
-    return $my_array_of_vars['v'];    
-      // Output: C4kxS1ksqtw
-}
 ?>
