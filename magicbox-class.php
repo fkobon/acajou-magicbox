@@ -7,7 +7,14 @@
 class MagicBox {
     
     public function __construct() {
-        // empty constructor
+        // add filters and actions according to OOP patterns.
+        
+        add_filter( 'wp_nav_menu_objects', array($this,'add_menu_parent_class') );
+        add_filter('the_title', array($this,'custom_the_title'), 10, 2);
+        add_action( 'admin_action_duplicate_post_as_draft', array($this,'duplicate_post_as_draft') );
+        add_filter('post_row_actions', array($this,'duplicate_post_link'), 10, 2); // add the feature to the dashboard post rows
+        add_filter('page_row_actions', array($this,'duplicate_post_link'), 10, 2); // add the feature to the dashboard page rows
+
     }
     
     //get data out of an upload image
@@ -44,7 +51,6 @@ class MagicBox {
         return str_replace("&#146;","",$title);
         return str_replace("’","",$title);
     }
-    add_filter('the_title', 'custom_the_title', 10, 2);
 
     //special public function for displaying categories if a post
     public function categories() {
@@ -376,40 +382,32 @@ class MagicBox {
            }
         }
 
-    /*
-     * public function creates post duplicate as a draft and redirects then to the edit post screen
-     */
-    public function rd_duplicate_post_as_draft(){
+    // Function creates post duplicate as a draft and redirects you to the edit post screen
+    function duplicate_post_as_draft(){
         global $wpdb;
-        if (! ( isset( $_GET['post']) || isset( $_POST['post'])  || ( isset($_REQUEST['action']) && 'rd_duplicate_post_as_draft' == $_REQUEST['action'] ) ) ) {
+        if (! ( isset( $_GET['post']) || isset( $_POST['post'])  || ( isset($_REQUEST['action']) && 'duplicate_post_as_draft' == $_REQUEST['action'] ) ) ) {
             wp_die('No post to duplicate has been supplied!');
         }
 
-        /*
-         * get the original post id
-         */
+        // get the original post id
         $post_id = (isset($_GET['post']) ? $_GET['post'] : $_POST['post']);
-        // $post_type = (isset($_GET['post_type']) ? $_GET['post_type'] : $_POST['post_type']);
-        /*
-         * and all the original post data then
-         */
+
+        // and all the original post data then
         $post = get_post( $post_id );
 
-        /*
+        /* 
          * if you don't want current user to be the new post author,
          * then change next couple of lines to this: $new_post_author = $post->post_author;
          */
+
         $current_user = wp_get_current_user();
         $new_post_author = $current_user->ID;
 
-        /*
-         * if post data exists, create the post duplicate
-         */
+        // if post data exists, create the post duplicate
         if (isset( $post ) && $post != null) {
 
-            /*
-             * new post data array
-             */
+            // new post data array
+
             $args = array(
                 'comment_status' => $post->comment_status,
                 'ping_status'    => $post->ping_status,
@@ -419,22 +417,20 @@ class MagicBox {
                 'post_name'      => $post->post_name,
                 'post_parent'    => $post->post_parent,
                 'post_password'  => $post->post_password,
-                'post_status'    => 'draft',
-                // 'post_status'    => 'published',
+                'post_status'    => 'draft', // You can change it to 'published' if your want duplicate it as a published post
                 'post_title'     => $post->post_title,
                 'post_type'      => $post->post_type,
                 'to_ping'        => $post->to_ping,
                 'menu_order'     => $post->menu_order
             );
 
-            /*
-             * insert the post by wp_insert_post() public function
-             */
+            // insert the post by wp_insert_post() function
+
             $new_post_id = wp_insert_post( $args );
 
-            /*
-             * get all current post terms ad set them to the new post draft
-             */
+
+            // get all current post terms ad set them to the new post draft
+
             $taxonomies = get_object_taxonomies($post->post_type); // returns array of taxonomy names for post type, ex array("category", "post_tag");
             foreach ($taxonomies as $taxonomy) {
                 $post_terms = wp_get_object_terms($post_id, $taxonomy);
@@ -443,9 +439,8 @@ class MagicBox {
                 }
             }
 
-            /*
-             * duplicate all post meta
-             */
+            // duplicate all post meta
+
             $post_meta_infos = $wpdb->get_results("SELECT meta_key, meta_value FROM $wpdb->postmeta WHERE post_id=$post_id");
             if (count($post_meta_infos)!=0) {
                 $sql_query = "INSERT INTO $wpdb->postmeta (post_id, meta_key, meta_value) ";
@@ -468,19 +463,17 @@ class MagicBox {
             wp_die('Post creation failed, could not find original post: ' . $post_id);
         }
     }
-    add_action( 'admin_action_rd_duplicate_post_as_draft', 'rd_duplicate_post_as_draft' );
 
-    /*
-     * Add the duplicate link to action list for post_row_actions
-     */
-    public function rd_duplicate_post_link( $actions, $post ) {
+    // Add the duplicate link to action list for post_row_actions
+
+    function duplicate_post_link( $actions, $post ) {
         if (current_user_can('edit_posts')) {
-            $actions['duplicate'] = '<a href="admin.php?action=rd_duplicate_post_as_draft&amp;post=' . $post->ID . '" title="Dupliquer cet élément" rel="permalink">Dupliquer</a>';
+            $actions['duplicate'] = '<a href="admin.php?action=duplicate_post_as_draft&amp;post=' . $post->ID . '" title="Duplicate this item" rel="permalink">Duplicate</a>';
         }
         return $actions;
     }
-
-    add_filter('post_row_actions', 'rd_duplicate_post_link', 10, 2);
+    
+    
 
    
 
@@ -540,7 +533,6 @@ class MagicBox {
     */
 
     // Add wp_nav_menu_objects for parent and child page class
-    add_filter( 'wp_nav_menu_objects', 'add_menu_parent_class' );
     public function add_menu_parent_class( $items ) {
 
         $parents = array();
